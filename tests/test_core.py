@@ -43,7 +43,6 @@ def test_unwind_stage():
     builder = AggBuilder()
     pipeline = builder.unwind("$tags").build()
     
-    print(pipeline)
     assert len(pipeline) == 1
     assert pipeline[0] == {"$unwind": {"path": "$tags", "preserveNullAndEmptyArrays": True}}
 
@@ -51,7 +50,6 @@ def test_group_stage():
     builder = AggBuilder()
     pipeline = builder.group("$department", total={"$sum": "$salary"}).build()
     
-    print(pipeline)
     assert len(pipeline) == 1
     assert pipeline[0] == {"$group": {"_id": "$department", "total": {"$sum": "$salary"}}}
 
