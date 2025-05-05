@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     
 setup(
     name="mongoagg",
-    version="0.1.0",
+    version="0.1.1",
     description="MongoDB Aggregation Pipeline Builder",
     author="scratchingmycranium",
     author_email="41268767+scratchingmycranium@users.noreply.github.com",
