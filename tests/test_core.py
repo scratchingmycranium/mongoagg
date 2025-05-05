@@ -1,6 +1,6 @@
 import pytest
-from mongoagg.core import AggBuilder
-from mongoagg.exceptions import InvalidLookupError, PipelineSerializationError, InvalidStageError
+from mongoagg import AggBuilder
+from mongoagg import InvalidLookupError, InvalidStageError
 
 def test_basic_pipeline_construction():
     builder = AggBuilder()
