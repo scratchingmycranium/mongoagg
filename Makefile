@@ -1,4 +1,4 @@
-.PHONY: version-patch version-minor version-major
+.PHONY: version-patch version-minor version-major release
 
 # Helper function to get current version
 define get_version
@@ -38,4 +38,13 @@ version-major:
 	sed -i '' 's/__version__ = ".*"/__version__ = "'$$new_version'"/' mongoagg/__init__.py; \
 	sed -i '' 's/version=".*"/version="'$$new_version'"/' setup.py; \
 	sed -i '' 's/version = ".*"/version = "'$$new_version'"/' pyproject.toml; \
-	echo "Bumped version to $$new_version" 
+	echo "Bumped version to $$new_version"
+
+release:
+	@version=$$(grep -m 1 "__version__" mongoagg/__init__.py | cut -d'"' -f2); \
+	echo "Creating release for version $$version"; \
+	git add mongoagg/__init__.py setup.py pyproject.toml; \
+	git commit -m "Release v$$version" || true; \
+	git tag -a "v$$version" -m "Release v$$version"; \
+	git push origin "v$$version"; \
+	echo "Release v$$version created! GitHub Actions will handle building and publishing." 
