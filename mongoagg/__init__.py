@@ -2,7 +2,7 @@
 MongoDB Aggregation Pipeline Builder
 """
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 from .core import AggBuilder
 from .exceptions import AggBuilderError, InvalidLookupError, PipelineSerializationError, InvalidStageError
