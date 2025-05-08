@@ -208,8 +208,6 @@ def test_mock_purchase_with_details_and_user_pipeline():
         "price": 1,
         "description": 1
     })
-    
-    print(product_lookup_pipeline.print_pretty())
 
     # Add the product lookup stage
     builder.lookup(
@@ -322,4 +320,59 @@ def test_mock_purchase_with_details_and_user_pipeline():
     }
     
     
+def test_pipeline_with_conditional_projection():
+    # Test with private details enabled
+    builder_true = AggBuilder()
+    builder_true.match({"_id": "purchase_id", "email": "test@example.com"})
+    builder_true.project({
+        "_id": 1,
+        "verificationCodes": Expr.cond(
+            if_=Expr.eq(True, True),  # Always true
+            then="$verificationCodes",
+            else_=Expr.remove()
+        ),
+        "productDetails": Expr.cond(
+            if_=Expr.eq(True, True),  # Always true
+            then="$verificationCodes",
+            else_=Expr.remove()
+        )
+    })
     
+    pipeline_true = builder_true.build()
+    assert len(pipeline_true) == 2
+    assert pipeline_true[0] == {
+        "$match": {
+            "_id": "purchase_id",
+            "email": "test@example.com"
+        }
+    }
+    assert pipeline_true[1]["$project"]["verificationCodes"]["$cond"]["then"] == "$verificationCodes"
+    assert pipeline_true[1]["$project"]["productDetails"]["$cond"]["then"] == "$verificationCodes"
+    
+    # Test with private details disabled
+    builder_false = AggBuilder()
+    builder_false.match({"_id": "purchase_id", "email": "test@example.com"})
+    builder_false.project({
+        "_id": 1,
+        "verificationCodes": Expr.cond(
+            if_=Expr.eq(False, True),  # Always false
+            then="$verificationCodes",
+            else_=Expr.remove()
+        ),
+        "productDetails": Expr.cond(
+            if_=Expr.eq(False, True),  # Always false
+            then="$verificationCodes",
+            else_=Expr.remove()
+        )
+    })
+    
+    pipeline_false = builder_false.build()
+    assert len(pipeline_false) == 2
+    assert pipeline_false[0] == {
+        "$match": {
+            "_id": "purchase_id",
+            "email": "test@example.com"
+        }
+    }
+    assert pipeline_false[1]["$project"]["verificationCodes"]["$cond"]["else"] == "$$REMOVE"
+    assert pipeline_false[1]["$project"]["productDetails"]["$cond"]["else"] == "$$REMOVE"
