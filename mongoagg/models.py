@@ -35,7 +35,7 @@ class Expr:
         return {"$lte": [a, b]}
     
     @staticmethod
-    def in_(a: Any, b: List[Any]) -> Dict[str, List[Any]]:
+    def in_(a: Any, b: Any) -> Dict[str, List[Any]]:
         """Returns a $in expression."""
         return {"$in": [a, b]}
     
