@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for generating release notes
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -35,6 +37,37 @@ jobs:
 
       - name: Build package
         run: poetry build
+
+      - name: Create archives
+        run: |
+          VERSION=$(poetry version -s)
+          tar -czf dist/mongoagg-${VERSION}.tar.gz mongoagg/
+          zip -r dist/mongoagg-${VERSION}.zip mongoagg/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            # If this is the first tag, get all commits
+            git log --pretty=format:"* %s (%h)" > release_notes.txt
+          else
+            # Get commits between previous tag and current HEAD
+            git log --pretty=format:"* %s (%h)" ${PREV_TAG}..HEAD > release_notes.txt
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+          body: ${{ steps.release_notes.outputs.notes }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
         env:
