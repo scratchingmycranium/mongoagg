@@ -9,7 +9,6 @@ from .models import (
     FacetStage, RedactStage, CommentStage, Pipeline
 )
 
-
 class AggBuilder:
     """
     Fluent builder for constructing MongoDB aggregation pipelines.
@@ -98,8 +97,7 @@ class AggBuilder:
         """
         return self.match(query)
 
-    @staticmethod
-    def match_expr(expr: Dict[str, Any]) -> Dict[str, Any]:
+    def match_expr(self, expr: Dict[str, Any]) -> "AggBuilder":
         """
         Returns a $match stage using $expr, used inside lookups.
         
@@ -112,7 +110,7 @@ class AggBuilder:
         Example:
             builder.match_expr({"$eq": ["$field1", "$field2"]})
         """
-        return {"$match": {"$expr": expr}}
+        return self.add(MatchStage(match={"$expr": expr}))
 
     def expr(self, expr: Dict[str, Any]) -> "AggBuilder":
         """
@@ -124,7 +122,7 @@ class AggBuilder:
         Returns:
             AggBuilder: The builder instance for method chaining
         """
-        return self.add(MatchStage(query={"$expr": expr}))
+        return self.add(MatchStage(match={"$expr": expr}))
     
     def project(self, fields: Dict[str, Any]) -> AggBuilder:
         """
@@ -309,7 +307,7 @@ class AggBuilder:
         local_field: Optional[str] = None,
         foreign_field: Optional[str] = None,
         let_: Optional[Dict[str, Any]] = None,
-        pipeline: Optional[List[Union[Dict[str, Any], "AggBuilder"]]] = None,
+        pipeline: Optional[Union[List[Union[Dict[str, Any], AggBuilder]], AggBuilder]] = None,
     ) -> AggBuilder:
         """
         Add a $lookup stage to perform a join-like operation.
@@ -320,7 +318,7 @@ class AggBuilder:
             local_field: The field from the input documents
             foreign_field: The field from the documents of the "from" collection
             let_: Variables to use in the pipeline field
-            pipeline: The pipeline to run on the joined collection
+            pipeline: The pipeline to run on the joined collection. Can be a list of stages or an AggBuilder instance
             
         Returns:
             AggBuilder: The builder instance for method chaining
@@ -335,16 +333,21 @@ class AggBuilder:
         """
         if pipeline is not None:
             stages = []
-            for p in pipeline:
-                if isinstance(p, AggBuilder):
-                    stages.extend(p.build())
-                else:
-                    stages.append(p)
+            if isinstance(pipeline, AggBuilder):
+                stages = pipeline.build()
+            else:
+                for p in pipeline:
+                    if isinstance(p, AggBuilder):
+                        stages.extend(p.build())
+                    else:
+                        stages.append(p)
             return self.add(LookupStage(
                 from_=from_,
                 as_=as_,
                 let_=let_,
-                pipeline=stages
+                pipeline=stages,
+                local_field=local_field,
+                foreign_field=foreign_field
             ))
         else:
             if not local_field or not foreign_field:
@@ -353,7 +356,9 @@ class AggBuilder:
                 from_=from_,
                 as_=as_,
                 local_field=local_field,
-                foreign_field=foreign_field
+                foreign_field=foreign_field,
+                let_=let_,
+                pipeline=pipeline
             ))
 
     def facet(self, **pipelines: List[Dict[str, Any]]) -> AggBuilder:

@@ -572,7 +572,7 @@ class LookupStage(Stage):
     pipeline: Optional[List[Dict[str, Any]]] = Field(None, description="The pipeline to run on the joined collection")
     
     def to_mongo(self) -> Dict[str, Any]:
-        lookup = {
+        lookup: Dict[str, Any] = {
             "from": self.from_,
             "as": self.as_
         }
