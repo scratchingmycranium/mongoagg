@@ -1,5 +1,7 @@
 # mongoagg
 
+<img src="mongoagg-logo.png" alt="MongoAgg banner" style="max-width: 100%; height: auto;">
+
 A fluent builder for constructing MongoDB aggregation pipelines in Python.
 
 ## Features
