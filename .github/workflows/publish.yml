@@ -41,7 +41,11 @@ jobs:
         run: poetry run pytest 
 
       - name: Build package
-        run: poetry build
+        run: |
+          poetry build
+          # Verify the built package structure
+          ls -la dist/
+          tar -tvf dist/mongoagg-*.tar.gz
 
       - name: Create archives
         run: |
@@ -77,4 +81,10 @@ jobs:
       - name: Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: poetry publish
+        run: |
+          # Clean any existing builds
+          rm -rf dist/
+          # Build the package
+          poetry build
+          # Publish to PyPI
+          poetry publish --no-interaction
